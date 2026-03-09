@@ -65,11 +65,11 @@ function log(level: string, message: string, data?: any) {
 // Runtime Tools
 import { runProject, stopProject, getDebugOutput } from './tools/runtime.js';
 import { captureScreenshot, captureVideo } from './tools/visual.js';
-import { getEngineInfo, getProjectSettings, getAvailableClasses, getRendererInfo } from './tools/engine.js';
+import { getEngineInfo, getProjectSettings, getAvailableClasses, getRendererInfo, getExportTemplates } from './tools/engine.js';
 import { searchFiles, searchCode, searchAssets, searchNodes, findScriptByClass } from './tools/retrieval.js';
 import { launchEditor, createScene, addNode, loadSprite, saveScene } from './tools/editor.js';
-import { getUid, updateProjectUids, listProjects, getProjectInfo } from './tools/project.js';
-import { attachDebugger, getRuntimeVars, getStackTrace, setBreakpoint, evaluateExpr, getPerfProfile, getMemoryInfo } from './tools/debug.js';
+import { getUid, updateProjectUids, listProjects, getProjectInfo, exportMeshLibrary } from './tools/project.js';
+import { attachDebugger, getRuntimeVars, getStackTrace, setBreakpoint, evaluateExpr, getPerfProfile, getMemoryInfo, consoleInput } from './tools/debug.js';
 
 // Health check
 app.get('/health', (req, res) => {
@@ -182,6 +182,16 @@ app.get('/api/renderer_info', async (req, res) => {
   }
 });
 
+app.get('/api/export_templates', async (req, res) => {
+  try {
+    const result = await getExportTemplates();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'get_export_templates failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ============================================================================
 // Retrieval APIs
 // ============================================================================
@@ -215,6 +225,28 @@ app.post('/api/search_assets', async (req, res) => {
     res.json(result);
   } catch (e: any) {
     log('ERROR', 'search_assets failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/search_nodes', async (req, res) => {
+  try {
+    const { projectPath, pattern } = req.body;
+    const result = await searchNodes(projectPath, pattern);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'search_nodes failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/find_script_by_class', async (req, res) => {
+  try {
+    const { projectPath, className } = req.body;
+    const result = await findScriptByClass(projectPath, className);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'find_script_by_class failed', { error: e.message });
     res.status(500).json({ error: e.message });
   }
 });
@@ -285,6 +317,17 @@ app.get('/api/memory_info', async (req, res) => {
   }
 });
 
+app.post('/api/console_input', async (req, res) => {
+  try {
+    const { command } = req.body;
+    const result = await consoleInput(command);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'console_input failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ============================================================================
 // Editor APIs
 // ============================================================================
@@ -333,6 +376,17 @@ app.get('/api/project_info', async (req, res) => {
     res.json(result);
   } catch (e: any) {
     log('ERROR', 'get_project_info failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/export_mesh_library', async (req, res) => {
+  try {
+    const { projectPath, scenePaths, outputPath } = req.body;
+    const result = await exportMeshLibrary(projectPath, scenePaths, outputPath);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'export_mesh_library failed', { error: e.message });
     res.status(500).json({ error: e.message });
   }
 });

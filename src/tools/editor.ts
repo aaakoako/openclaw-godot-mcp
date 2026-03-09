@@ -77,22 +77,28 @@ export async function addNode(projectPath: string, scenePath: string, nodePath: 
   try {
     let content = readFileSync(fullPath, 'utf-8');
     
-    // Find a place to add the node (before the last closing bracket)
-    const nodeDef = `
-[node name="${nodeName || 'NewNode'}" type="${nodeType}"]
-`;
+    // Build node definition
+    const targetNodeName = nodeName || 'NewNode';
+    const nodeDef = '\n[node name="' + targetNodeName + '" type="' + nodeType + '"]\n';
     
-    // Simple append for now - could be smarter about placement
-    content = content.replace(/\n\[\\/gd_scene\]\n?$/, nodeDef + '\n[/gd_scene]\n');
+    // Find end of scene and insert node before closing
+    const endPattern = '\n[/gd_scene]';
+    const endIndex = content.lastIndexOf(endPattern);
     
-    writeFileSync(fullPath, content, 'utf-8');
+    if (endIndex === -1) {
+      return { success: false, error: 'Invalid scene format: no [gd_scene] end tag' };
+    }
+    
+    const newContent = content.slice(0, endIndex) + nodeDef + endPattern + content.slice(endIndex + endPattern.length);
+    
+    writeFileSync(fullPath, newContent, 'utf-8');
     
     return { 
       success: true, 
       path: fullPath,
       nodePath,
       nodeType,
-      nodeName
+      nodeName: targetNodeName
     };
   } catch (e: any) {
     return { success: false, error: e.message };

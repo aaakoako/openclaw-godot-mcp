@@ -206,7 +206,7 @@ export async function searchNodes(projectPath: string, pattern: string): Promise
 export async function findScriptByClass(projectPath: string, className: string): Promise<any> {
   try {
     const files = findFilesRecursive(projectPath, '', DEFAULT_EXTENSIONS.scripts);
-    const results: Array<{ file: string; className: string }> = [];
+    const results: Array<{ file: string; name?: string; className: string }> = [];
     
     for (const file of files) {
       try {

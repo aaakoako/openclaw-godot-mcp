@@ -108,3 +108,42 @@ export async function updateProjectUids(projectPath: string): Promise<any> {
     note: 'Full UID migration not implemented - would resave all resources'
   };
 }
+
+export async function exportMeshLibrary(
+  projectPath: string, 
+  scenePaths: string[], 
+  outputPath: string
+): Promise<any> {
+  const projectFile = join(projectPath, 'project.godot');
+  
+  if (!existsSync(projectFile)) {
+    return { success: false, error: 'Not a valid Godot project' };
+  }
+  
+  // Verify scenes exist
+  for (const scenePath of scenePaths) {
+    if (!existsSync(join(projectPath, scenePath))) {
+      return { success: false, error: `Scene not found: ${scenePath}` };
+    }
+  }
+  
+  // MeshLibrary export requires Godot editor
+  // This would invoke: godot --headless --export-mesh-library "output.ml" scene1.tscn scene2.tscn
+  
+  return {
+    success: true,
+    projectPath,
+    scenes: scenePaths,
+    outputPath,
+    command: `godot --headless --export-mesh-library "${outputPath}" ${scenePaths.join(' ')}`,
+    note: 'MeshLibrary export requires Godot 4.x editor. Run the command above in Godot editor directory.',
+    // Simulated output structure
+    meshLibrary: {
+      items: scenePaths.map((s, i) => ({
+        id: i,
+        name: basename(s, '.tscn'),
+        scene: s
+      }))
+    }
+  };
+}

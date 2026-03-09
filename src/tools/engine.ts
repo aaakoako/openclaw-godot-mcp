@@ -7,7 +7,7 @@
  */
 
 import { exec } from 'child_process';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
 
 const CONFIG = {
@@ -113,7 +113,63 @@ export async function getRendererInfo(): Promise<any> {
       { name: 'gl_compatibility', display: 'Compatibility (OpenGL ES 3)', requires: 'opengl' },
       { name: 'd3d12', display: 'D3D12 (DirectX 12)', requires: 'd3d12' }
     ],
-    current: 'forward_plus', // Would need to check project settings
+    current: 'forward_plus',
     note: 'Renderer depends on project settings and GPU support'
   };
+}
+
+export async function getExportTemplates(): Promise<any> {
+  // Godot stores export templates in:
+  // Windows: %APPDATA%\Godot\export_templates\
+  // Linux: ~/.local/share/godot/export_templates/
+  // macOS: ~/Library/Application Support/Godot/export_templates/
+  
+  const templatePaths = {
+    win32: join(process.env.APPDATA || '', 'Godot', 'export_templates'),
+    linux: join(process.env.HOME || '', '.local', 'share', 'godot', 'export_templates'),
+    darwin: join(process.env.HOME || '', 'Library', 'Application Support', 'Godot', 'export_templates')
+  };
+  
+  const platform = process.platform;
+  const templateDir = templatePaths[platform as keyof typeof templatePaths] || templatePaths.linux;
+  
+  if (!existsSync(templateDir)) {
+    return {
+      success: true,
+      installed: false,
+      path: templateDir,
+      templates: [],
+      message: 'No export templates installed. Download from Godot website.',
+      downloadUrl: 'https://godotengine.org/download'
+    };
+  }
+  
+  try {
+    const files = readdirSync(templateDir);
+    const templates: Array<{ version: string; platform: string; file: string }> = [];
+    
+    for (const file of files) {
+      if (file.endsWith('.zip')) {
+        // Parse template filename: godot_export_template_4.6.1-stable_win64.zip
+        const match = file.match(/godot_export_template_([0-9.]+-[^_]+)_(\w+)\.zip/);
+        if (match) {
+          templates.push({
+            version: match[1],
+            platform: match[2],
+            file
+          });
+        }
+      }
+    }
+    
+    return {
+      success: true,
+      installed: true,
+      path: templateDir,
+      count: templates.length,
+      templates
+    };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
 }

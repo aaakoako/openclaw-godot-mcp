@@ -151,3 +151,58 @@ export async function getMemoryInfo(): Promise<any> {
     note: 'Simulated - full memory integration pending'
   };
 }
+
+let consoleInputHistory: string[] = [];
+
+export async function consoleInput(command: string): Promise<any> {
+  if (!debuggerAttached) {
+    return { 
+      success: false, 
+      error: 'Debugger not attached',
+      note: 'Attach debugger first to use console'
+    };
+  }
+  
+  consoleInputHistory.push(command);
+  
+  // Simulated console commands
+  const response = {
+    success: true,
+    command,
+    output: '',
+    type: 'unknown'
+  };
+  
+  const cmd = command.toLowerCase().trim();
+  
+  if (cmd === 'help') {
+    response.output = `Available commands:
+  help - Show this help
+  vars - List all variables
+  scene - Current scene tree
+  fps - Show FPS
+  quit - Exit console`;
+    response.type = 'info';
+  } else if (cmd === 'vars' || cmd === 'variables') {
+    response.output = JSON.stringify(runtimeVars, null, 2);
+    response.type = 'variables';
+  } else if (cmd === 'scene') {
+    response.output = runtimeVars?.scene_tree || 'Main';
+    response.type = 'string';
+  } else if (cmd === 'fps') {
+    response.output = 'FPS: 60';
+    response.type = 'string';
+  } else if (cmd === 'quit' || cmd === 'exit') {
+    response.output = 'Goodbye!';
+    response.type = 'info';
+  } else {
+    response.output = `Unknown command: ${command}. Type "help" for available commands.`;
+    response.type = 'error';
+  }
+  
+  return response;
+}
+
+export function getConsoleHistory(): string[] {
+  return consoleInputHistory;
+}
