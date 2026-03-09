@@ -70,6 +70,26 @@ import { searchFiles, searchCode, searchAssets, searchNodes, findScriptByClass }
 import { launchEditor, createScene, addNode, loadSprite, saveScene } from './tools/editor.js';
 import { getUid, updateProjectUids, listProjects, getProjectInfo, exportMeshLibrary } from './tools/project.js';
 import { attachDebugger, getRuntimeVars, getStackTrace, setBreakpoint, evaluateExpr, getPerfProfile, getMemoryInfo, consoleInput } from './tools/debug.js';
+import { 
+  startDebugSession, 
+  stopDebugSession,
+  dapInitialize,
+  dapLaunch,
+  dapSetBreakpoint,
+  dapClearBreakpoint,
+  dapContinue,
+  dapPause,
+  dapNext,
+  dapStepIn,
+  dapStepOut,
+  dapStackTrace,
+  dapVariables,
+  dapEvaluate,
+  dapThreads,
+  dapDisconnect,
+  dapGetOutput,
+  dapIsConnected
+} from './tools/dap.js';
 
 // Health check
 app.get('/health', (req, res) => {
@@ -317,6 +337,174 @@ app.post('/api/evaluate', async (req, res) => {
     log('ERROR', 'evaluate_expr failed', { error: e.message });
     res.status(500).json({ error: e.message });
   }
+});
+
+// ============================================================================
+// DAP Debug APIs (Real Debugger Integration)
+// ============================================================================
+
+app.post('/api/dap/start', async (req, res) => {
+  try {
+    const { projectPath, scene } = req.body;
+    const result = await startDebugSession(projectPath, scene);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_start failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/dap/stop', async (req, res) => {
+  try {
+    const result = await stopDebugSession();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_stop failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/dap/initialize', async (req, res) => {
+  try {
+    const result = await dapInitialize();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_initialize failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/dap/launch', async (req, res) => {
+  try {
+    const { projectPath, noDebug } = req.body;
+    const result = await dapLaunch(projectPath, noDebug);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_launch failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/dap/breakpoint', async (req, res) => {
+  try {
+    const { path, line, action = 'set' } = req.body;
+    const result = action === 'clear' 
+      ? await dapClearBreakpoint(path, line)
+      : await dapSetBreakpoint(path, line);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_breakpoint failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/dap/continue', async (req, res) => {
+  try {
+    const result = await dapContinue();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_continue failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/dap/pause', async (req, res) => {
+  try {
+    const result = await dapPause();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_pause failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/dap/next', async (req, res) => {
+  try {
+    const result = await dapNext();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_next failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/dap/step_in', async (req, res) => {
+  try {
+    const result = await dapStepIn();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_step_in failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/dap/step_out', async (req, res) => {
+  try {
+    const result = await dapStepOut();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_step_out failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/dap/stack_trace', async (req, res) => {
+  try {
+    const result = await dapStackTrace();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_stack_trace failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/dap/variables', async (req, res) => {
+  try {
+    const { ref } = req.query;
+    const result = await dapVariables(parseInt(ref as string) || 0);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_variables failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/dap/evaluate', async (req, res) => {
+  try {
+    const { expression, frameId } = req.body;
+    const result = await dapEvaluate(expression, frameId);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_evaluate failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/dap/threads', async (req, res) => {
+  try {
+    const result = await dapThreads();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_threads failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/dap/disconnect', async (req, res) => {
+  try {
+    const result = await dapDisconnect();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'dap_disconnect failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/dap/status', async (req, res) => {
+  res.json({
+    connected: dapIsConnected(),
+    output: dapGetOutput()
+  });
 });
 
 app.get('/api/perf_profile', async (req, res) => {
