@@ -280,17 +280,15 @@ export async function getPerformance(projectPath?: string): Promise<any> {
   const script = `
 var p = Performance
 var metrics = {
-    "fps": p.get_monitor(Performance.TIME_FPS),
-    "frame_time_ms": p.get_monitor(Performance.TIME_PROCESS) * 1000,
-    "physics_frame_time_ms": p.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000,
-    "render_draw_calls": p.get_monitor(Performance.RENDER_DRAW_CALLS),
-    "render_vertices": p.get_monitor(Performance.RENDER_VERTICES_IN_FRAME),
-    "object_count": p.get_monitor(Performance.OBJECT_COUNT),
-    "node_count": p.get_monitor(Performance.OBJECT_NODE_COUNT),
-    "resource_count": p.get_monitor(Performance.OBJECT_RESOURCE_COUNT),
-    "orphan_node_count": p.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT),
-    "multiplayer_peers": p.get_monitor(Performance.MULTIPLAYER_PEERS),
-    "multiplayer_messages": p.get_monitor(Performance.MULTIPLAYER_MESSAGES_PER_SECOND),
+    "fps": p.get_monitor(p.TIME_FPS),
+    "frame_time_ms": p.get_monitor(p.TIME_PROCESS) * 1000,
+    "physics_frame_time_ms": p.get_monitor(p.TIME_PHYSICS_PROCESS) * 1000,
+    "render_draw_calls": p.get_monitor(p.RENDER_DRAW_CALLS_IN_FRAME),
+    "render_vertices": p.get_monitor(p.RENDER_VERTICES_IN_FRAME),
+    "object_count": p.get_monitor(p.OBJECT_COUNT),
+    "node_count": p.get_monitor(p.OBJECT_NODE_COUNT),
+    "resource_count": p.get_monitor(p.OBJECT_RESOURCE_COUNT),
+    "orphan_node_count": p.get_monitor(p.OBJECT_ORPHAN_NODE_COUNT),
 }
 print(JSON.stringify(metrics))
 `;
@@ -313,17 +311,12 @@ print(JSON.stringify(metrics))
 export async function getMemoryInfo(projectPath?: string): Promise<any> {
   const script = `
 var p = Performance
-var os = OS
 var metrics = {
-    "memory_static": p.get_monitor(Performance.MEMORY_STATIC),
-    "memory_static_max": p.get_monitor(Performance.MEMORY_STATIC_MAX),
-    "memory_video": p.get_monitor(Performance.MEMORY_VIDEO),
-    "memory_messages": p.get_monitor(Performance.MEMORY_MESSAGES),
-    "memory_messages_total": p.get_monitor(Performance.MEMORY_MESSAGES_TOTAL),
-    "memory_allocated": p.get_monitor(Performance.MEMORY_ALLOCATED),
-    "memory_reserved": p.get_monitor(Performance.MEMORY_RESERVED),
-    "os_allocated_mem": OS.get_static_memory_usage(),
-    "os_allocated_mem_peak": OS.get_static_memory_peak_usage(),
+    "memory_static": p.get_monitor(p.MEMORY_STATIC),
+    "memory_static_max": p.get_monitor(p.MEMORY_STATIC_MAX),
+    "memory_video": p.get_monitor(p.MEMORY_VIDEO),
+    "memory_allocated": p.get_monitor(p.MEMORY_ALLOCATED),
+    "memory_reserved": p.get_monitor(p.MEMORY_RESERVED),
 }
 print(JSON.stringify(metrics))
 `;
