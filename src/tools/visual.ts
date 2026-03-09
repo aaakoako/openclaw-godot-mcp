@@ -4,7 +4,6 @@
  * - capture_video
  */
 
-import { spawn } from 'child_process';
 import { existsSync, mkdirSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
 
@@ -19,72 +18,45 @@ function ensureDir(path: string) {
   }
 }
 
+/**
+ * Capture a screenshot from Godot project
+ * Note: Not supported in headless mode - requires display context
+ */
 export async function captureScreenshot(projectPath: string, outputPath?: string): Promise<any> {
   ensureDir(CONFIG.screenshotDir);
   
   const output = outputPath || join(CONFIG.screenshotDir, `screenshot_${Date.now()}.png`);
   
-  // Run Godot with screenshot mode
-  const args = [
-    '--path', projectPath,
-    '--headless',
-    '--write-movie', output,
-    '--quit-after', '1',
-    '--fixed-fps', '1'
-  ];
-
-  return new Promise((resolve) => {
-    const proc = spawn(CONFIG.godotPath, args, { shell: true });
-    
-    proc.on('close', (code) => {
-      if (existsSync(output)) {
-        resolve({ 
-          success: true, 
-          path: output,
-          filename: basename(output)
-        });
-      } else {
-        resolve({ 
-          success: false, 
-          error: 'Screenshot file not created' 
-        });
-      }
-    });
-  });
+  return {
+    success: false,
+    error: 'Screenshot not supported in headless mode',
+    note: 'Godot requires a display context to render. Options:',
+    alternatives: [
+      '1. Run with actual display (not headless)',
+      '2. Use RDP to connect to the VM and capture manually',
+      '3. Run Godot in a virtual framebuffer (Linux only)'
+    ]
+  };
 }
 
+/**
+ * Capture a video from Godot project
+ * Note: Not supported in headless mode - requires display context
+ */
 export async function captureVideo(projectPath: string, outputPath?: string, frames = 300): Promise<any> {
   ensureDir(CONFIG.screenshotDir);
   
   const output = outputPath || join(CONFIG.screenshotDir, `video_${Date.now()}.avi`);
   
-  const args = [
-    '--path', projectPath,
-    '--headless',
-    '--write-movie', output,
-    '--quit-after', frames.toString(),
-    '--fixed-fps', '30'
-  ];
-
-  return new Promise((resolve) => {
-    const proc = spawn(CONFIG.godotPath, args, { shell: true });
-    
-    proc.on('close', (code) => {
-      if (existsSync(output)) {
-        resolve({ 
-          success: true, 
-          path: output,
-          filename: basename(output),
-          frames
-        });
-      } else {
-        resolve({ 
-          success: false, 
-          error: 'Video file not created' 
-        });
-      }
-    });
-  });
+  return {
+    success: false,
+    error: 'Video capture not supported in headless mode',
+    note: 'Godot requires a display context to render videos',
+    alternatives: [
+      '1. Run with actual display (not headless)',
+      '2. Use RDP to connect to the VM and capture manually'
+    ]
+  };
 }
 
 export async function listCaptures(): Promise<any> {
