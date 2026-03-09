@@ -63,7 +63,7 @@ function log(level: string, message: string, data?: any) {
 // ============================================================================
 
 // Runtime Tools
-import { runProject, stopProject, getDebugOutput } from './tools/runtime.js';
+import { runProject, stopProject, getDebugOutput, executeScript, executeCode } from './tools/runtime.js';
 import { captureScreenshot, captureVideo } from './tools/visual.js';
 import { getEngineInfo, getProjectSettings, getAvailableClasses, getRendererInfo, getExportTemplates } from './tools/engine.js';
 import { searchFiles, searchCode, searchAssets, searchNodes, findScriptByClass } from './tools/retrieval.js';
@@ -107,6 +107,28 @@ app.get('/api/debug_output', async (req, res) => {
     res.json(result);
   } catch (e: any) {
     log('ERROR', 'get_debug_output failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/execute_script', async (req, res) => {
+  try {
+    const { scriptPath, args, projectPath } = req.body;
+    const result = await executeScript(scriptPath, args || [], projectPath);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'execute_script failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/execute_code', async (req, res) => {
+  try {
+    const { code, projectPath } = req.body;
+    const result = await executeCode(code, projectPath);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'execute_code failed', { error: e.message });
     res.status(500).json({ error: e.message });
   }
 });
