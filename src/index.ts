@@ -69,7 +69,22 @@ import { getEngineInfo, getProjectSettings, getAvailableClasses, getRendererInfo
 import { searchFiles, searchCode, searchAssets, searchNodes, findScriptByClass } from './tools/retrieval.js';
 import { launchEditor, createScene, addNode, loadSprite, saveScene } from './tools/editor.js';
 import { getUid, updateProjectUids, listProjects, getProjectInfo, exportMeshLibrary } from './tools/project.js';
-import { attachDebugger, getRuntimeVars, getStackTrace, setBreakpoint, evaluateExpr, getPerfProfile, getMemoryInfo, consoleInput } from './tools/debug.js';
+import { 
+  attachDebugger, 
+  getRuntimeVars, 
+  getStackTrace, 
+  setBreakpoint, 
+  evaluateExpr, 
+  getPerfProfile, 
+  getMemoryInfo, 
+  consoleInput,
+  detachDebugger,
+  debugContinue,
+  debugPause,
+  debugNext,
+  debugStepIn,
+  debugStepOut
+} from './tools/debug.js';
 import { 
   startDebugSession, 
   stopDebugSession,
