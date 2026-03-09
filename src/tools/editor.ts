@@ -1,13 +1,14 @@
 /**
  * Editor Tools
  * - launch_editor
+ * - get_editor_status
  * - create_scene
  * - add_node
  * - load_sprite
  * - save_scene
  */
 
-import { spawn } from 'child_process';
+import { spawn, exec } from 'child_process';
 import { existsSync, writeFileSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 
@@ -15,6 +16,12 @@ const CONFIG = {
   godotPath: process.env.GODOT_PATH || 'G:\\Godot-AI\\Godot_v4.6.1-stable_win64.exe',
 };
 
+let editorProcess: any = null;
+let editorPid: number | null = null;
+
+/**
+ * Launch Godot editor
+ */
 export async function launchEditor(projectPath: string): Promise<any> {
   if (!existsSync(projectPath)) {
     return { success: false, error: 'Project path does not exist' };
@@ -25,25 +32,122 @@ export async function launchEditor(projectPath: string): Promise<any> {
     return { success: false, error: 'Not a valid Godot project (no project.godot)' };
   }
   
+  // Check if already running
+  if (editorPid && await isProcessRunning(editorPid)) {
+    return { 
+      success: true, 
+      message: 'Editor already running',
+      projectPath,
+      pid: editorPid
+    };
+  }
+  
   // Launch editor (non-blocking)
-  spawn(CONFIG.godotPath, ['--path', projectPath, '--editor'], {
+  editorProcess = spawn(CONFIG.godotPath, ['--path', projectPath, '--editor'], {
     detached: true,
     stdio: 'ignore',
     shell: true
   });
   
+  // On Windows with detached, pid might not be directly available
+  // So we'll try to find it
+  editorPid = editorProcess.pid || null;
+  
+  editorProcess.on('error', (err: Error) => {
+    console.error('Editor process error:', err);
+    editorProcess = null;
+    editorPid = null;
+  });
+  
+  // Give it a moment to start
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Try to verify it's running
+  const isRunning = await isProcessRunning(editorPid);
+  
   return { 
     success: true, 
-    message: 'Editor launched',
-    projectPath
+    message: isRunning ? 'Editor launched' : 'Editor starting',
+    projectPath,
+    pid: editorPid,
+    note: isRunning ? 'Process verified running' : 'Process may still be starting'
   };
+}
+
+/**
+ * Check if a process is running
+ */
+async function isProcessRunning(pid: number | null): Promise<boolean> {
+  if (!pid) return false;
+  
+  return new Promise((resolve) => {
+    try {
+      // On Windows, use tasklist
+      exec(`tasklist /FI "PID eq ${pid}" /NH`, (err, stdout) => {
+        if (err) {
+          resolve(false);
+          return;
+        }
+        // If process exists, output will contain the PID
+        resolve(stdout.includes(pid.toString()));
+      });
+    } catch (e) {
+      resolve(false);
+    }
+  });
+}
+
+/**
+ * Get editor status
+ */
+export async function getEditorStatus(): Promise<any> {
+  const running = await isProcessRunning(editorPid);
+  
+  return {
+    success: true,
+    running,
+    pid: editorPid,
+    note: running ? 'Editor is running' : 'Editor is not running'
+  };
+}
+
+/**
+ * Stop the editor
+ */
+export async function stopEditor(): Promise<any> {
+  if (!editorPid) {
+    return { success: false, error: 'No editor process recorded' };
+  }
+  
+  const running = await isProcessRunning(editorPid);
+  if (!running) {
+    editorPid = null;
+    editorProcess = null;
+    return { success: true, message: 'Editor was not running' };
+  }
+  
+  return new Promise((resolve) => {
+    try {
+      // Try to kill the process
+      exec(`taskkill /PID ${editorPid} /F`, (err) => {
+        editorPid = null;
+        editorProcess = null;
+        if (err) {
+          resolve({ success: false, error: err.message });
+        } else {
+          resolve({ success: true, message: 'Editor stopped' });
+        }
+      });
+    } catch (e: any) {
+      resolve({ success: false, error: e.message });
+    }
+  });
 }
 
 export async function createScene(projectPath: string, scenePath: string, rootNodeType = 'Node2D'): Promise<any> {
   const fullPath = join(projectPath, scenePath);
   const dir = dirname(fullPath);
   
-  // Ensure directory exists
   if (!existsSync(dir)) {
     return { success: false, error: 'Parent directory does not exist' };
   }
@@ -77,11 +181,9 @@ export async function addNode(projectPath: string, scenePath: string, nodePath: 
   try {
     let content = readFileSync(fullPath, 'utf-8');
     
-    // Build node definition
     const targetNodeName = nodeName || 'NewNode';
     const nodeDef = '\n[node name="' + targetNodeName + '" type="' + nodeType + '"]\n';
     
-    // Find end of scene and insert node before closing
     const endPattern = '\n[/gd_scene]';
     const endIndex = content.lastIndexOf(endPattern);
     
@@ -106,7 +208,6 @@ export async function addNode(projectPath: string, scenePath: string, nodePath: 
 }
 
 export async function loadSprite(projectPath: string, scenePath: string, nodePath: string, texturePath: string): Promise<any> {
-  // Similar to addNode but adds texture reference
   const fullPath = join(projectPath, scenePath);
   
   if (!existsSync(fullPath)) {
@@ -123,8 +224,6 @@ export async function loadSprite(projectPath: string, scenePath: string, nodePat
 }
 
 export async function saveScene(projectPath: string, scenePath: string): Promise<any> {
-  // In Godot, scenes are auto-saved
-  // This would trigger a save through the editor if running
   return {
     success: true,
     message: 'Scene saved (auto-save in Godot)',

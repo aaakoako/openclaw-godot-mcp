@@ -65,9 +65,9 @@ function log(level: string, message: string, data?: any) {
 // Runtime Tools
 import { runProject, stopProject, getDebugOutput, executeScript, executeCode } from './tools/runtime.js';
 import { captureScreenshot, captureVideo } from './tools/visual.js';
-import { getEngineInfo, getProjectSettings, getAvailableClasses, getRendererInfo, getExportTemplates } from './tools/engine.js';
+import { getEngineInfo, getProjectSettings, getAvailableClasses, getRendererInfo, getExportTemplates, getPerformance, getEngineMemory, getEngineStatus, getClassDetails } from './tools/engine.js';
 import { searchFiles, searchCode, searchAssets, searchNodes, findScriptByClass } from './tools/retrieval.js';
-import { launchEditor, createScene, addNode, loadSprite, saveScene } from './tools/editor.js';
+import { launchEditor, createScene, addNode, loadSprite, saveScene, getEditorStatus, stopEditor } from './tools/editor.js';
 import { getUid, updateProjectUids, listProjects, getProjectInfo, exportMeshLibrary } from './tools/project.js';
 import { 
   attachDebugger, 
@@ -221,10 +221,59 @@ app.get('/api/project_settings', async (req, res) => {
 
 app.get('/api/available_classes', async (req, res) => {
   try {
-    const result = await getAvailableClasses();
+    const { projectPath } = req.query;
+    const result = await getAvailableClasses(projectPath as string);
     res.json(result);
   } catch (e: any) {
     log('ERROR', 'get_available_classes failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/class_details', async (req, res) => {
+  try {
+    const { className, projectPath } = req.query;
+    if (!className) {
+      res.status(400).json({ error: 'className is required' });
+      return;
+    }
+    const result = await getClassDetails(className as string, projectPath as string);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'get_class_details failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/performance', async (req, res) => {
+  try {
+    const { projectPath } = req.query;
+    const result = await getPerformance(projectPath as string);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'get_performance failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/engine_memory', async (req, res) => {
+  try {
+    const { projectPath } = req.query;
+    const result = await getEngineMemory(projectPath as string);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'get_memory_info failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/engine_status', async (req, res) => {
+  try {
+    const { projectPath } = req.query;
+    const result = await getEngineStatus(projectPath as string);
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'get_engine_status failed', { error: e.message });
     res.status(500).json({ error: e.message });
   }
 });
@@ -564,6 +613,26 @@ app.post('/api/launch_editor', async (req, res) => {
     res.json(result);
   } catch (e: any) {
     log('ERROR', 'launch_editor failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/editor_status', async (req, res) => {
+  try {
+    const result = await getEditorStatus();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'editor_status failed', { error: e.message });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/stop_editor', async (req, res) => {
+  try {
+    const result = await stopEditor();
+    res.json(result);
+  } catch (e: any) {
+    log('ERROR', 'stop_editor failed', { error: e.message });
     res.status(500).json({ error: e.message });
   }
 });
