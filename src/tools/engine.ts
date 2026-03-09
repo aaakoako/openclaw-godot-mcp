@@ -36,10 +36,13 @@ async function runGDScript(code: string, projectPath?: string): Promise<string> 
   const tmpDir = projectPath || '.';
   const tmpPath = join(tmpDir, '_mcp_temp_script.gd');
   
+  // Wrap code in a proper script structure
+  const scriptContent = `extends Node\nfunc _ready():\n${code.split('\n').map((l: string) => '    ' + l).join('\n')}\n`;
+  
   try {
-    writeFileSync(tmpPath, code, 'utf-8');
+    writeFileSync(tmpPath, scriptContent, 'utf-8');
     
-    const args = ['--script', tmpPath, '--headless'];
+    const args = ['--script', tmpPath, '--headless', '--quit-after', '5'];
     if (projectPath) {
       args.unshift('--path', projectPath);
     }
